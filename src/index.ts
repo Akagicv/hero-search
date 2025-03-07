@@ -29,15 +29,21 @@ export function apply(ctx: Context, config: Config) {
     await session.send("搜索原图中...");
     const client = sagiri(config.token);
     const results = await client(imgList[0]);
-    let msgList: string[] = [];
-    results.forEach((item) => {
+    
+	  let filteredResults = results.filter(item => parseFloat(item.similarity) > 90);
+    if (filteredResults.length === 0) {
+      await session.send("没有搜索到相似度大于90的图片");
+      return;
+    }
+	
+    let msgList = [];
+    filteredResults.forEach((item) => {
       msgList.push(`<message><img src="${item.thumbnail}" cache=true />
 ${config.containUrl ? `链接：${item.url}` : ""}
-作者：${(item.authorName ? item.authorName: "未知")}
+作者：${item.authorName ? item.authorName : "未知"}
 网站：${item.site}
 相似度：${item.similarity}%
 索引：${item.index}</message>`);
-      //ctx.logger.info(`#${item.index}: ${item.thumbnail}`)
     });
     await session.send(`<message forward>${msgList.join('')}</message>`);
   });
